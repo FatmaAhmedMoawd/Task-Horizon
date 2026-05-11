@@ -1,177 +1,192 @@
-# SPA Specification Audit & Refined Requirements
-
-## Self-Audit Summary
-
-A detailed evaluation of the original specification was performed against standard React, Next.js, and general SPA architectural standards. The following areas were identified as needing correction or enhancement:
-
-1.  **Missing Details**:
-    *   **Timezone Handling**: Dates were specified as ISO strings, but the UI strategy for timezones (e.g., UTC vs. local time display) was omitted, particularly for `dueDate`.
-    *   **Assignee Default State**: Did not specify behavior for tasks with no assigned user (nullable assignee vs. "Unassigned" placeholder).
-    *   **Data Hydration State**: The strategy for dealing with mismatched initial render (server vs client) due to `localStorage` dependency was incomplete.
-
-2.  **Incorrect or Incomplete Sections**:
-    *   **Architectural Contradiction (Mock API vs. Storage)**: Section 5 recommended using Next.js Route Handlers (`app/api/route.ts`) to simulate the Mock API, while Sections 1 and 4 mandated `localStorage` for data persistence. This is a severe contradiction because Next.js Route Handlers run in a Node.js server environment and cannot access the client's browser `localStorage`. 
-
-3.  **Inconsistencies or Contradictions**:
-    *   *State Hydration vs. App Router*: Implementing a generic `Provider` in Next.js App Router using a singleton Redux store can lead to state leakage between requests in a full SSR scenario. 
-
-4.  **Shallow or Underdeveloped Explanations**:
-    *   **Optimistic Drag-and-Drop (DnD) Rollbacks**: The specification glossed over exactly how the snapshot object would be stored and reverted in the Redux store upon simulated network failure.
-    *   **dnd-kit Constraints**: The `dnd-kit` sorting context requires a 1-dimensional array of unique IDs per column, which was not explicitly defined in the state strategy.
-
-5.  **Ambiguous Wording**:
-    *   "Mock API layer simulating network latency and failure to validate optimistic UX." It was unclear if this mock layer should intercept at the network level (MSW), Route Handler level, or Client side wrapper layer.
-
-6.  **Fix / Refactor Approach**:
-    *   **The Mock API layer must explicitly act as a client-side wrapper**, not actual Route Handlers. The wrapper will use `setTimeout` to mimic network activity and interact seamlessly with `localStorage`.
-    *   Strict hydration gating via a bespoke `<DataHydrator>` component that pauses rendering until the Redux store is seeded from `localStorage`.
-    *   Store design modified to maintain explicit normalized lists of IDs (`tasksByStatus`) to power the `dnd-kit` UI reliably without deep object mapping.
-
----
-
-# Refined Project Specification
+# SPA Specification: Dashboard & Kanban
 
 ## 1. Project Overview
 
-A SaaS-style internal dashboard with two primary experiences:
+A SaaS-style internal dashboard featuring two primary user experiences:
+- **Dashboard / Analytics**: At-a-glance business and productivity metrics (tasks created/completed, workload by assignee, overdue trends) leveraging interactive Recharts visuals and summary KPI cards in a Horizon UI–inspired layout.
+- **Kanban Board**: Comprehensive task management with **create/edit**, **filter/search**, and **drag-and-drop** across **three columns** (Todo, In Progress, Done).
 
-*   **Dashboard / Analytics**: At-a-glance business + productivity metrics (tasks created/completed, workload by assignee, overdue trends) with interactive charts and summary cards in a Horizon UI–inspired layout.
-*   **Kanban Board**: Task management with **create/edit**, **filter/search**, and **drag-and-drop** across **three columns** (Todo / In Progress / Done). 
+Data persistence is managed entirely via **localStorage** to support local, session-agnostic continuity. A dedicated **Mock API Adapter layer** simulates backend network latency and failure rates to validate optimistic UI patterns. Expected UX traits include: a highly responsive card-based UI, a sticky sidebar and header, responsive grid scaling, "instant" interactions (via optimistic drag-and-drop), explicit loading/empty/error states, and full keyboard accessibility for both form inputs and drag-and-drop actions.
 
-Changes persist via **localStorage**. A client-side mock network layer intercepts persistence operations, simulating network latency and failure to enable testing of optimistic UI and rollback mechanisms. Expected UX includes: card-based UI, sticky sidebar + header, responsive layout, seamless interactions, clear loading/empty/error states, and keyboard-accessible forms.
+---
 
 ## 2. Project Architecture & Folder Structure
 
-**Recommended App Router Structure:**
+The application strictly adheres to the Next.js App Router paradigm, enforcing a rigid separation of concerns between layout chrome, interactive features, data persistence, and UI primitives.
 
-*   `app/`
-    *   `(dashboard)/` (Route group for authenticated app shell)
-        *   `layout.tsx` (Sidebar/header shell, applies global layout constraints)
-        *   `dashboard/page.tsx` (Analytics view)
-        *   `kanban/page.tsx` (Kanban board view)
-    *   `layout.tsx` (Root layout, fonts, `<StoreProvider>`, `<DataHydrator>`)
-    *   `globals.css` (Tailwind base + Horizon-like globals)
-*   `components/` (Reusable UI building blocks)
-    *   `ui/` (Core UI elements: Button, Card, Badge, Input, Select, Modal, Skeleton)
-    *   `dashboard/` (Analytics widgets, KPI definitions)
-    *   `kanban/` (Column, Card, DragOverlay, CreateTaskDrawer)
-*   `lib/`
-    *   `store/` (Redux Toolkit store setup, slice definitions)
-    *   `schemas/` (Zod validation schemas)
-    *   `types/` (Strict TS types and enums)
-    *   `api/` (Client-side mock asynchronous API adapters interacting with localStorage)
-    *   `utils/` (Date manipulation formatting, id generation, Tailwind `cn` utility)
+- `app/`
+  - `(dashboard)/` (Route group for the authenticated application shell)
+    - `layout.tsx` (Sidebar/header shell, shared layout structure)
+    - `page.tsx` (Route redirecting to `/dashboard` or serving as a landing)
+    - `dashboard/`
+      - `page.tsx` (Analytics view)
+      - `_components/` (Page-specific, non-reusable dashboard widget configurations)
+    - `kanban/`
+      - `page.tsx` (Kanban entry point)
+      - `_components/` (Kanban-specific sub-trees to prevent layout pollution)
+  - `layout.tsx` (Root Next.js layout, global font configuration, Context Providers)
+  - `globals.css` (Tailwind base layers + Horizon-style base tokens)
+- `components/` 
+  - `ui/` (Agnostic, reusable design system primitives: Button, Card, Badge, Input, Select, Modal/Drawer, Skeleton, Tooltip)
+  - `charts/` (Wrappers for Recharts to maintain consistent axes and tooltips)
+  - `kanban/` (Core architectural components for the board: KanbanColumn, SortableTaskCard, DragOverlay UI)
+- `lib/`
+  - `store/` (Redux Toolkit configuration, root reducer setups, slice definitions, and RTK listeners)
+  - `schemas/` (Zod validation schemas acting as the single source of truth for runtime validation)
+  - `types/` (Strict TypeScript definitions statically inferred from Zod schemas)
+  - `api/` (Client-side API interface wrappers implementing the simulated network behavior)
+  - `storage/` (localStorage interaction layer handling versioning and data migrations)
+  - `utils/` (Pure helper functions: debounce, date formatting, ID generation, class-merging `cn`)
+- `hooks/` (Typed React hooks: `useDebounce`, `useHydrated`, `useMediaQuery`)
 
-**Scale and Maintainability Rationale:**
-The Next.js App Router structure enables seamless expansion. Abstracting persistence into `lib/api/` isolates UI from data transportation. Client-only boundaries (`'use client'`) are enforced strictly at the component level to preserve SSR benefits where applicable, and the entire app is wrapped in a Hydration gate to prevent localized localStorage mismatches.
+> **Architectural Resolution on APIs vs localStorage:**
+> Original instructions cited both Next.js Route Handlers (`/app/api/...`) and a `localStorage` sync pattern. Because Next.js server-side Route Handlers cannot read or write to a client's `localStorage`, the architecture resolves this by isolating the mock API completely within `lib/api/client.ts`. This client-side module mocks standard fetch/axios signatures and communicates directly with `lib/storage/`, ensuring optimal Next.js deployment flexibility and avoiding server/client state desyncs.
+
+---
 
 ## 3. Data Model Specification
 
-### Core `Task` Entity (Strictly Typed)
+### Core `Task` Entity
 
-Fields:
-*   **id**: string (stable unique identifier, e.g., timestamp-based).
-*   **title**: string (minimum length 1).
-*   **description**: string (empty string `""` preferred over `null` to simplify UI).
-*   **priority**: union enum: `'low' | 'medium' | 'high' | 'urgent'`.
-*   **dueDate**: string | null (ISO 8601 string in UTC, explicitly nullable).
-*   **assignee**: object:
-    *   `assigneeId`: string
-    *   `assigneeName`: string
-    *   `avatarUrl`: string | null
-*   **status**: union enum: `'todo' | 'in_progress' | 'done'`.
-*   **createdAt**: string (ISO Date).
-*   **updatedAt**: string (ISO Date).
-*   **order**: number (Relative ordering weight within a status column).
-*   **tags**: string[] (Keywords for filtering).
-*   **archived**: boolean (Defaults to `false`, drives soft deletion).
-*   **estimate**: number | null (Story points or hours).
-*   **lastMovedAt**: string (ISO Date for velocity metrics).
+The `Task` structure relies on Zod as the authoritative source of truth. TypeScript interfaces are derived strictly via `z.infer`.
 
-Typing Alignment: `lib/schemas/task.ts` (Zod schema) acts as the single source of truth. TypeScript interfaces are generated directly via `z.infer`.
+**Fields (Defined via Zod):**
+- **id**: `string` (UUID v4 or stable unique hash)
+- **title**: `string` (Non-empty, minimum length 1)
+- **description**: `string` (Can be empty. Kept as string rather than nullable to prevent uncontrolled input warnings in React)
+- **priority**: `z.enum(['low', 'medium', 'high', 'urgent'])`
+- **dueDate**: `string | null` (ISO 8601 UTC string to prevent timezone offset bugs)
+- **assignee**: `object`
+  - `assigneeId`: `string`
+  - `assigneeName`: `string`
+  - `avatarUrl`: `string | null`
+- **status**: `z.enum(['todo', 'in_progress', 'done'])`
+- **createdAt**: `string` (ISO 8601 UTC string)
+- **updatedAt**: `string` (ISO 8601 UTC string)
+- **order**: `number` (Used for stable positional tracking within columns. Utilizing an integer spaced by 65536 initially allows mathematically finding the midpoint `(prev.order + next.order) / 2` for mid-insertions without immediate recalculations)
+- **tags**: `string[]` (Array of tags for filtering)
+- **archived**: `boolean` (Soft deletion flag)
+- **estimate**: `number | null` (Story points, abstract effort metric)
+- **lastMovedAt**: `string` (ISO 8601 UTC string tracking column transition times for flow analytics)
+
+---
 
 ## 4. State Management Strategy
 
-### Choice: Redux Toolkit (RTK)
+### Strategy: Redux Toolkit (RTK)
+RTK is utilized over Zustand to ensure robust handling of multi-step async flows (optimistic rollback), deep object tracking via Immer, and clear segregation of normalized local data versus derived analytical data via Reselect. 
 
-RTK is selected to handle multi-step interactions (optimistic drag/drop with exact snapshot rollbacks) predictably. The Redux footprint reduces edge cases found in standard local state scaling.
+### Global State Shape
+- `entities`:
+  - `tasksById`: `Record<TaskId, Task>` (Primary data dictionary)
+  - `taskIdsByStatus`: `Record<Status, TaskId[]>` (Arrays explicitly maintaining correct sequence based on the `order` property)
+- `ui`:
+  - `filters`: `{ search: string, priority: string | null, assignee: string | null, dueRange: { start: string|null, end: string|null }, tags: string[] }`
+  - `kanban`: `{ activeDragTaskId: string | null, isCreateOpen: boolean, editingTaskId: string | null }`
+- `network`:
+  - `tasks`: `{ fetchStatus: 'idle'|'loading'|'succeeded'|'failed', fetchError: string | null, mutationQueue: Record<TaskId, 'pending'|'error'> }`
+- `persistence`:
+  - `hasHydratedFromStorage`: `boolean` (Critical to prevent React SSR hydration mismatch)
+  - `schemaVersion`: `number` (Matches `lib/storage/` migration version)
 
-### State Shape
+### Critical Selectors (Memoized)
+- **`selectFilteredNormalizedTasks`**: Chain-applies text search, priority, assignee, and tag filters against `tasksById`.
+- **`selectDashboardAggregates`**: Calculates key analytical counts (overdue tasks, completion ratios, assignee capacities) in a single O(N) pass.
+- **`selectIsTaskOverdue(taskId)`**: Isolated business logic identifying if `dueDate < new Date()` and `status !== 'done'`.
 
-*   `items`: `Record<TaskId, Task>` (Normalized entity dictionary).
-*   `columns`: `Record<Status, TaskId[]>` (Ordered array of IDs explicitly structured to feed `dnd-kit`).
-*   `ui`:
-    *   `filters`: `{ search: string, priority: string[], assigneeIds: string[] }`
-    *   `status`: `'idle' | 'loading' | 'failed'`
-    *   `error`: `string | null`
+### Action Flow: Optimistic Drag and Drop
+1. **`moveTaskOptimistic`**: Dispatched synchronously on the `dnd-kit` `onDragEnd` event. Immediately updates `taskIdsByStatus`, computes new `order`, and updates the task's `status`.
+2. **`moveTaskCommit` (Thunk)**: Initiates the mock API network request mimicking remote persistence. Updates `updatedAt` / `lastMovedAt` on success.
+3. **`moveTaskRollback`**: Dispatched if the promise rejects. Restores the exact `order`, `status`, and dictionary state captured before the optimistic move, followed by pushing an error toast to the user.
 
-### Key Selectors
-*   **Hydrated Board State**: Selects ID lists mapped to rich `Task` entities for rendering Kanban columns.
-*   **Dashboard Aggregates**: Selects derived values (completion percentage grouping, workload by user).
-
-### Actions & Flows (Optimistic DnD Strategy)
-1. **Move Initiated (`moveTaskOptimistically`)**: Immediately remove the task ID from the source column array and insert it into the destination column array. Change the item's internal `status`.
-2. **Network Phase (`persistMoveAsync`)**: Intercept the move via `lib/api/client.ts`. A simulated delay runs with a defined failure probability.
-3. **Commit or Rollback**:
-    *   *Success*: Do nothing to the list state. Dispatch `commitTaskUpdate` to update the `updatedAt` / `lastMovedAt` metadata.
-    *   *Failure*: Dispatch `rollbackTaskMove` utilizing the cached previous column arrays and task state object, immediately reverting the view. Display an error Toast.
+---
 
 ## 5. Mock API & Persistence Design
 
-### Strategy: Client-Side Wrapper Layer
-To satisfy the dual requirements of simulated network latency/errors alongside `.localStorage` permanence, we explicitly DO NOT use Next.js server-side Route Handlers (`app/api`). Instead, we implement an Async Client Adapter.
+### Isolated Client-Side Network Adapter
+The mock API layer (`lib/api/client.ts`) exclusively serves Promises that resolve or gracefully throw after forced delays. It is cleanly abstracted so the UI components only import standard async calls (e.g., `TaskApi.updateStatus()`).
 
-*   `fetchTasks()`: Resolves a Promise after global `$LATENCY` ms. Reads `localStorage` payload, or seeds default data if completely empty.
-*   `createTask(input)`: Validates via Zod constraint, creates structural entity, updates `localStorage`, and Promise resolves after `$LATENCY`.
-*   `updateTask(id, input)`: Merges partial changes, executes `$ERROR_RATE` check, throws exception mimicking an 500 Network failure if hit, otherwise resolves securely to storage.
-*   `deleteTask(id)`: Removes entity, rewrites localStorage payload.
+- **Simulated Latency**: Implemented via `await new Promise(r => setTimeout(r, Math.random() * 600 + 300))` (300ms–900ms delay).
+- **Simulated Hard Failures**: A deterministic or random failing interceptor applies a 5% failure rate rejecting with a standard `HttpError` shape for testing optimistic rollbacks.
+- **Server-Style Validation**: The mock adapter pipes incoming payloads through the Zod `taskSchema` *before* inserting into storage, replicating standard backend validation boundaries safely avoiding corrupting `localStorage`.
+
+### LocalStorage Adapter (`lib/storage/`)
+- Intercepts state serialization efficiently utilizing `rtk-listener-middleware`.
+- Includes a schema migration switch block for future updates to the data contour.
+
+---
 
 ## 6. UI & Interaction Logic
 
 ### Dashboard Analytics Page
-*   **Charting Library**: Recharts (Responsive, clean aesthetics).
-*   **Widgets**: Top KPI cards (Total, Completed, Overdue, Average Time in Progress). Main area holds a line chart (velocity over time) and bar chart (assignee distribution).
+**Data Visualization:** Powered by **Recharts**.
+- **Metrics (KPI Cards)**: Displays aggregate views (Total tasks, Completed, Overdue, Average Time to Complete).
+- **Line Chart**: Tracks tasks completed daily. Incorporates hover tooltips and interactive legends that allow toggling visual series natively.
+- **Bar Chart**: workload distribution per active assignee.
+- **Donut/Pie**: Priority distribution visualization.
 
-### Kanban Board Page
-*   **DnD Library**: `@dnd-kit/core` & `@dnd-kit/sortable`.
-*   **Mechanics**:
-    *   Intra-column sorting utilizes `KeyboardSensor` and `PointerSensor`.
-    *   Inter-column movements track over targets and utilize a `DragOverlay` component strictly to render the moving card, preventing DOM layout shifts on the backend array modification.
-    *   Minimal Re-rendering: Columns consume purely `TaskId` arrays. Individual cards grab deeply nested state directly via selectors connected to the Redux context, ignoring irrelevant state dispatches.
+### Kanban Board Interaction
+- Built utilizing **dnd-kit** equipped with pointer and keyboard sensors.
+- Implements a fixed **DragOverlay** rendering the active card above the DOM layout. This is critical to prevent CSS flex/grid layout thrashing when dragging elements rapidly.
+- Columns do not accept the full object. Kanbans consume `tasksIdsByStatus` arrays and map IDs to `SortableTaskCard`s, pulling data directly via `useSelector`.
 
-### Searching and Layout
-*   A centralized `Search` header filters results based on matching a generalized string payload (`title + description`). Throttled and debounced to prevent stutters.
-*   `CreateTaskDrawer`: Absolute positioned off-canvas drawer controlled via Zustand or RTK local `ui/` state. Validated tightly bounding to `CreateTaskInput` Zod object schemas.
+### Filtering & Search
+- Filter actions dispatch updates debounced by `useDebounce` (300ms) to avoid lagging the UI during keystrokes.
+- Text matching sanitizes, lowercases, and concatenates `title`, `description`, and `assigneeName`.
 
-## 7. UI Design & Styling Approach 
+### Task Creation and Edit Drawer
+- Anchored to the right side of the screen using a **Drawer/Slide-Over** pattern for heavy contexts.
+- **Rules of UX Engagement**:
+  - Requires **confirm dialog** attempting to close the drawer while the `react-hook-form` is dynamically marked `isDirty`.
+  - Input auto-focus activates on the `Title` field when opening the drawer; focus securely restores to the "New Task" triggering button upon closing.
+  - Form validation errors appear instantly below fields strictly formatted by the `zodResolver`.
+  - A global banner displays safely at the top of the form regarding transient API failures.
+  - On successful API confirmation, the drawer auto-closes, and the UI briefly pulses or highlights the newly injected card within the board.
 
-*   **System**: Tailwind CSS utilizing deep hierarchy rules to mirror Horizon UI.
-*   **Theme Layout**: 
-    *   Sidebar fixed left with hover states. App Header fixed top with User Circle, Search, Notifications.
-    *   Body uses `bg-slate-50` / `bg-gray-50`. Cards use `bg-white`, `border-slate-200`, `rounded-xl`, generic spacing metric standard to `p-5`.
-    *   Typography: Space Grotesk header hierarchy (`display`), Inter body text (`sans`).
+---
+
+## 7. UI Design & Styling Approach
+
+TailwindCSS architecture is optimized around the **Horizon UI** visual themes:
+- **Core Layout Structure**: Desktop utilizes a fixed `.w-64` left sidebar featuring styled SVG icons in pills. The `.sticky.top-0` Header carries user profile drop-downs and trailing actions. 
+- **Surface Elevation**: Content grids utilize `bg-slate-50/50`. Modals, Drawers and Cards surface as pure `.bg-white` sporting subtle `.shadow-sm` and `.border-slate-200/60` borders.
+- **Micro-Interactions**: Predictable scale interactions via `.transition-transform .duration-200 hover:scale-[1.01]` on cards. 
+- **Typography Scale**: Deep tracking controls; `text-slate-900` for primary headers, `text-slate-500` for meta-descriptions.
+- **Status Semantics (Badges)**: 
+  - *Todo*: Slate / Gray
+  - *In Progress*: Indigo / Blue
+  - *Done*: Emerald / Green
+  - *Urgent Priorities*: Rose / Red 
+
+---
 
 ## 8. Performance Considerations
 
-*   **Debounced Reserving**: Inputs directly bound to state maps (search filters) have 300ms reaction constraints.
-*   **Client Boundaries**: Components dependent on `dnd-kit` and local storage wrapped in explicit `"use client"` blocks.
-*   **Hydration Control**: A global wrapper `<DataHydrator>` runs `useEffect` on global mount tracking readiness. Before it evaluates, the initial application layout renders skeletal load states, ensuring `localStorage` initialization never conflicts with Next.js SSR checksums.
+- **React Hydration Strategy**: The App requires a `DataHydrator` client component placed near the root layout which reads `localStorage` within a `useEffect`, dispatches the populated payload to Redux, and sets `hasHydratedFromStorage`. Until `true`, Next.js SSR passes render skeleton fallbacks gracefully to prevent checksum mismatch logic.
+- **Memoization Strictness**: Redux `createSelector` is required for aggregate metrics; calculations never happen dynamically mapping arrays within raw function render closures.
+- **Responsive Dimensions**: Recharts' `ResponsiveContainer` reacts to screen variants, but standard HTML nodes utilize `ResizeObserver` coupled with debounce tools preventing over-firing event queues during continuous resizing instances.
+
+---
 
 ## 9. UX States & Visual Feedback
 
-*   **Skeletons**: Layout matches exactly to actual sizes preventing 'flash of content'.
-*   **Error Barriers**: Failed Mock API calls surface through transient Toast notifications containing actionable text (e.g. "Simulated network failure. Try again.").
-*   **Transitions**: Action buttons disable gracefully accompanied by circular loaders. Cards scale up dynamically `scale-105` inside Drag Overlays.
+- **Skeletons (Pending Load)**: Initial bootstrapping before hydration uses structure-perfect `animate-pulse` generic boxes tracking exactly the Kanban grids and Dashboard KPIs visually.
+- **Global Data Absences**: Boards with 0 tasks entirely show a centralized graphic CTA invoking the "Create Task" logic. Empty filters surface a distinct "No Tasks Found" warning allowing a cascading "Reset Filters" click.
+- **Error States / Mutating Fails**: Explicit toast notifications trigger natively identifying Rollbacks ("Task movement failed. Synchronizing original state."). Submissions grey-out actions securely, showing internal loading spinners natively atop the confirmation buttons preventing duplicate calls.
+
+---
 
 ## 10. Extensibility Plan
 
-*   Structure bounds support seamless addition of complex objects by purely extending Zod typing rules in `lib/schemas/task.ts`.
-*   `lib/api/` handles generic Promise endpoints. Future integration of real backend databases entails deleting the `localStorage` logic entirely inside `client.ts` and replacing it with literal `fetch()` configurations, resulting in identically smooth functionality.
+- **Layout Scalability**: Adding additional navigation roots correctly respects the `(dashboard)` routing context dynamically adopting headers and responsive grid structures.
+- **Data Shape Revisions**: Augmenting tasks with 'swimlanes', 'checklists', or 'attachments' requires simple appending to the central Zod schema, alongside incrementing the `schemaVersion` tracking flag inside `lib/storage/` ensuring graceful parsing over stale cache architectures natively.
+- **Transition to Active Backends**: Swapping the functional operations inside `lib/api/client.ts` for standardized `axios.post` configurations completely removes the mock setup whilst cleanly preserving component stability without touching frontend files.
+
+---
 
 ## 11. Quality & Evaluation Criteria
 
-An excellent implementation will strictly pass:
-*   Absolute Zero `any` exceptions throughout the codebase execution. Extracted mapping to Redux entities exclusively adheres to Zod typing.
-*   SSR and DOM consistency maintained via standard hydration handling.
-*   Drag and Drops do not drop 60FPS tracking, and handle aggressive mouse interactions smoothly via overlays without snapping errors.
-*   UI implements a cohesive, airy, Horizon-like spacing scale consistently without ad-hoc magic padding numbers.
+- **Semantic Integrity**: Rigid Typescript compliance with zero manual `any` or loose typings across the state machine.
+- **UI Performance Tracking**: Uninterrupted drag states via optimized mapping and overlay logic.
+- **Visual Accuracy Check**: Complete Horizon UI translation ensuring high fidelity padding, margin hierarchy, structural consistency, and visual balance.
+- **Fault Tolerance**: Hard confirmation of API/Mock failures accurately dispatching structural restorations to the Redux states assuring zero desync between columns and background configurations.

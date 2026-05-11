@@ -101,7 +101,7 @@ export function KanbanBoard() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 h-full min-h-[500px] overflow-x-auto pb-4 px-1 items-start">
+      <div className="flex gap-4 sm:gap-6 h-full overflow-x-auto pb-4 px-1 items-stretch snap-x snap-mandatory">
         <KanbanColumn id="todo" title="To Do" items={taskIdsByStatus.todo} tasks={tasks} />
         <KanbanColumn id="in_progress" title="In Progress" items={taskIdsByStatus.in_progress} tasks={tasks} />
         <KanbanColumn id="done" title="Done" items={taskIdsByStatus.done} tasks={tasks} />

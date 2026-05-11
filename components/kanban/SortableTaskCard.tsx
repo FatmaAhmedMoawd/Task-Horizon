@@ -29,7 +29,7 @@ export function SortableTaskCard({ task }: SortableTaskCardProps) {
       <div 
         ref={setNodeRef} 
         style={style} 
-        className="opacity-40 rounded-xl border-2 border-dashed border-brand-400 bg-brand-50/50 min-h-[140px] w-full"
+        className="opacity-40 rounded-[24px] border-2 border-dashed border-brand-400 bg-brand-50/50 min-h-[160px] w-full"
       />
     );
   }

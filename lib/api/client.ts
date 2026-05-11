@@ -1,4 +1,5 @@
 import { CreateTaskInput, Task, UpdateTaskInput } from '../types';
+import { CreateTaskSchema, UpdateTaskSchema } from '../schemas/task';
 
 const STORAGE_KEY = 'kanban_tasks_v1';
 const LATENCY = 400; // ms
@@ -79,31 +80,49 @@ export const fetchTasks = async (): Promise<Task[]> => {
 
 export const createTask = async (input: CreateTaskInput): Promise<Task> => {
   await simulateNetwork();
+  
+  // Server-side validation
+  const validationResult = CreateTaskSchema.safeParse(input);
+  if (!validationResult.success) {
+    throw new Error(`Validation failed: ${validationResult.error.errors.map((e: any) => e.message).join(', ')}`);
+  }
+  const validatedInput = validationResult.data;
+
   const tasks = loadFromStorage();
   const newTask: Task = {
-    ...input,
+    ...validatedInput,
     id: `task-${Date.now()}-${Math.floor(Math.random()*1000)}`,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    order: tasks.filter(t => t.status === input.status).length,
+    order: tasks.filter(t => t.status === validatedInput.status).length,
     lastMovedAt: new Date().toISOString(),
     archived: false,
-  };
+  } as Task; // asserting because Transform might slightly adjust types but we match interface Task
+  
   saveToStorage([...tasks, newTask]);
   return newTask;
 };
 
 export const updateTask = async (id: string, input: UpdateTaskInput): Promise<Task> => {
   await simulateNetwork();
+  
+  // Server-side validation
+  const validationResult = UpdateTaskSchema.safeParse(input);
+  if (!validationResult.success) {
+    throw new Error(`Validation failed: ${validationResult.error.errors.map((e: any) => e.message).join(', ')}`);
+  }
+  
   const tasks = loadFromStorage();
   const index = tasks.findIndex(t => t.id === id);
   if (index === -1) throw new Error('Task not found');
   
   const updatedTask = {
     ...tasks[index],
-    ...input,
+    ...input, // we can use the raw input or validated result. Partial update makes it tricky to fully replace with validated, but validated ensures we don't save garbage.
     updatedAt: new Date().toISOString(),
   };
+  
+  // Verify final shape if needed, but schema handles it.
   
   tasks[index] = updatedTask;
   saveToStorage([...tasks]);
@@ -112,6 +131,15 @@ export const updateTask = async (id: string, input: UpdateTaskInput): Promise<Ta
 
 export const updateTasksBatch = async (updates: { id: string, data: UpdateTaskInput }[]): Promise<Task[]> => {
   await simulateNetwork();
+  
+  // Validate all updates
+  for (const update of updates) {
+    const valid = UpdateTaskSchema.safeParse(update.data);
+    if (!valid.success) {
+       throw new Error(`Validation failed for task ${update.id}: ${valid.error.errors.map((e: any) => e.message).join(', ')}`);
+    }
+  }
+
   const tasks = loadFromStorage();
   
   const updatedTasks = updates.map(update => {

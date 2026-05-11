@@ -12,17 +12,33 @@ module.exports = {
       },
       colors: {
         brand: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb', // primary
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#F4F7FE',
+          100: '#E9EDF7',
+          200: '#D0D7E1',
+          300: '#A3AED0',
+          400: '#707EAE',
+          500: '#422AFB', // Horizon Primary
+          600: '#3311DB',
+          700: '#2111A5',
+          800: '#190793',
+          900: '#11047A',
+        },
+        secondary: {
+          gray: {
+            50: '#F4F7FE',
+            100: '#E9EDF7',
+            200: '#D0D7E1',
+            300: '#A3AED0',
+            400: '#707EAE',
+            500: '#2B3674', // Dark text
+            600: '#1B2559',
+            700: '#111C44',
+          }
         }
+      },
+      boxShadow: {
+        'horizon': '14px 17px 40px 4px rgba(112, 144, 176, 0.08)',
+        'horizon-input': 'inset 0px 2px 4px rgba(0, 0, 0, 0.05)',
       }
     },
   },

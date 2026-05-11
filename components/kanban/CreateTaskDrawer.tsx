@@ -18,7 +18,7 @@ type FormValues = z.infer<typeof CreateTaskSchema>;
 
 export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
   const dispatch = useAppDispatch();
-  const { register, handleSubmit, formState: { errors, isSubmitting }, reset } = useForm<FormValues>({
+  const { register, handleSubmit, setError, formState: { errors, isSubmitting }, reset } = useForm<FormValues>({
     resolver: zodResolver(CreateTaskSchema),
     defaultValues: {
       status: 'todo',
@@ -31,9 +31,13 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
   if (!isOpen) return null;
 
   const onSubmit = async (data: FormValues) => {
-    await dispatch(createNewTask(data as CreateTaskInput)).unwrap();
-    reset();
-    onClose();
+    try {
+      await dispatch(createNewTask(data as CreateTaskInput)).unwrap();
+      reset();
+      onClose();
+    } catch (error: any) {
+      setError('root', { type: 'manual', message: error?.message || 'Failed to create task' });
+    }
   };
 
   return (
@@ -50,7 +54,8 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
           <h2 className="text-lg font-semibold text-slate-900">Create New Task</h2>
           <button 
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-full transition-colors"
+            aria-label="Close drawer"
+            className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center rounded-full transition-colors min-h-[44px] min-w-[44px]"
           >
             <X className="w-5 h-5" />
           </button>
@@ -58,61 +63,76 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
 
         <div className="flex-1 overflow-y-auto p-6">
           <form id="create-task-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            {errors.root && (
+              <div className="p-3 bg-red-50 text-red-700 text-sm font-medium rounded-xl border border-red-200">
+                {errors.root.message}
+              </div>
+            )}
+            
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Title <span className="text-red-500">*</span></label>
+              <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-2">Title <span className="text-red-500">*</span></label>
               <input 
+                id="title"
                 {...register('title')}
-                className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
+                className={`w-full px-4 py-2.5 min-h-[44px] text-base border ${errors.title ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-brand-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-shadow`}
                 placeholder="E.g., Design new landing page"
               />
               {errors.title && <p className="mt-1 text-sm text-red-500 font-medium">{errors.title.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
+              <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
               <textarea 
+                id="description"
                 {...register('description')}
                 rows={4}
-                className="w-full px-4 py-3 text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow resize-none"
+                className={`w-full px-4 py-3 text-base border ${errors.description ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-brand-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition-shadow resize-none`}
                 placeholder="Add more details about this task..."
               />
+              {errors.description && <p className="mt-1 text-sm text-red-500 font-medium">{errors.description.message}</p>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
+                <label htmlFor="status" className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
                 <select 
+                  id="status"
                   {...register('status')}
-                  className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className={`w-full px-4 py-2.5 min-h-[44px] text-base border ${errors.status ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-brand-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white`}
                 >
                   <option value="todo">To Do</option>
                   <option value="in_progress">In Progress</option>
                   <option value="done">Done</option>
                 </select>
+                {errors.status && <p className="mt-1 text-sm text-red-500 font-medium">{errors.status.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Priority</label>
+                <label htmlFor="priority" className="block text-sm font-semibold text-slate-700 mb-2">Priority</label>
                 <select 
+                  id="priority"
                   {...register('priority')}
-                  className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className={`w-full px-4 py-2.5 min-h-[44px] text-base border ${errors.priority ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-brand-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white`}
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
                   <option value="high">High</option>
                   <option value="urgent">Urgent</option>
                 </select>
+                {errors.priority && <p className="mt-1 text-sm text-red-500 font-medium">{errors.priority.message}</p>}
               </div>
             </div>
 
             {/* Note: In a real app we'd have a proper assigning dropdown, simplified here */}
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Due Date</label>
+              <label htmlFor="dueDate" className="block text-sm font-semibold text-slate-700 mb-2">Due Date</label>
               <input 
+                id="dueDate"
                 {...register('dueDate')}
                 type="date"
-                className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                className={`w-full px-4 py-2.5 min-h-[44px] text-base border ${errors.dueDate ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-brand-500'} rounded-xl focus:outline-none focus:ring-2 focus:border-transparent bg-white transition-shadow`}
               />
+              {errors.dueDate && <p className="mt-1 text-sm text-red-500 font-medium">{errors.dueDate.message}</p>}
             </div>
 
           </form>

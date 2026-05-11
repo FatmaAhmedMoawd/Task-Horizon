@@ -16,17 +16,17 @@ export function KanbanColumn({ id, title, items, tasks }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col w-[85vw] sm:w-[320px] shrink-0 bg-slate-100/80 rounded-xl max-h-full border border-slate-200 shadow-sm overflow-hidden">
-      <div className="p-4 flex items-center justify-between border-b border-slate-200/60 bg-slate-100/50">
-        <h3 className="font-semibold text-slate-800">{title}</h3>
-        <span className="bg-white text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
+    <div className="flex flex-col w-[85vw] sm:w-[350px] shrink-0 h-full max-h-full overflow-hidden snap-center">
+      <div className="px-5 py-6 flex items-center justify-between pb-3">
+        <h3 className="text-xl font-bold text-secondary-gray-600">{title}</h3>
+        <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-white text-secondary-gray-600 text-sm font-bold shadow-horizon ring-1 ring-brand-100">
           {items.length}
         </span>
       </div>
       
       <div 
         ref={setNodeRef}
-        className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 min-h-[150px]"
+        className="flex-1 p-5 overflow-y-auto flex flex-col gap-5 min-h-0 custom-scrollbar hover:bg-brand-50/30 transition-colors rounded-[24px]"
       >
         <SortableContext id={id} items={items} strategy={verticalListSortingStrategy}>
           {items.map(taskId => (
