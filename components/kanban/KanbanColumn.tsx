@@ -16,10 +16,10 @@ export function KanbanColumn({ id, title, items, tasks }: KanbanColumnProps) {
   const { setNodeRef } = useDroppable({ id });
 
   return (
-    <div className="flex flex-col w-[320px] shrink-0 bg-slate-100 rounded-xl max-h-full border border-slate-200">
-      <div className="p-4 flex items-center justify-between border-b border-slate-200">
-        <h3 className="font-semibold text-slate-700">{title}</h3>
-        <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs font-medium">
+    <div className="flex flex-col w-[85vw] sm:w-[320px] shrink-0 bg-slate-100/80 rounded-xl max-h-full border border-slate-200 shadow-sm overflow-hidden">
+      <div className="p-4 flex items-center justify-between border-b border-slate-200/60 bg-slate-100/50">
+        <h3 className="font-semibold text-slate-800">{title}</h3>
+        <span className="bg-white text-slate-600 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm border border-slate-200">
           {items.length}
         </span>
       </div>

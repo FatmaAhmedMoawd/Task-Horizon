@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, KeyboardSensor, PointerSensor, TouchSensor, useSensor, useSensors, DragStartEvent, DragOverEvent, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { KanbanColumn } from './KanbanColumn';
 import { TaskCard } from './TaskCard';
@@ -15,6 +15,7 @@ export function KanbanBoard() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -100,7 +101,7 @@ export function KanbanBoard() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex gap-6 h-full min-h-[500px] overflow-x-auto pb-4 items-start">
+      <div className="flex gap-6 h-full min-h-[500px] overflow-x-auto pb-4 px-1 items-start">
         <KanbanColumn id="todo" title="To Do" items={taskIdsByStatus.todo} tasks={tasks} />
         <KanbanColumn id="in_progress" title="In Progress" items={taskIdsByStatus.in_progress} tasks={tasks} />
         <KanbanColumn id="done" title="Done" items={taskIdsByStatus.done} tasks={tasks} />

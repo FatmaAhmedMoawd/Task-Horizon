@@ -29,13 +29,13 @@ export function SortableTaskCard({ task }: SortableTaskCardProps) {
       <div 
         ref={setNodeRef} 
         style={style} 
-        className="opacity-30 rounded-lg border-2 border-dashed border-brand-500 bg-brand-50 h-[120px]"
+        className="opacity-40 rounded-xl border-2 border-dashed border-brand-400 bg-brand-50/50 min-h-[140px] w-full"
       />
     );
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="touch-manipulation">
       <TaskCard task={task} />
     </div>
   );

@@ -49,10 +49,10 @@ export function DashboardContent() {
        priorities[task.priority]++;
     });
     return [
-      { name: 'Low', value: priorities.low, color: '#94a3b8' },
-      { name: 'Medium', value: priorities.medium, color: '#10b981' },
-      { name: 'High', value: priorities.high, color: '#f59e0b' },
-      { name: 'Urgent', value: priorities.urgent, color: '#ef4444' },
+      { name: 'Low', value: priorities.low, color: '#64748b' },
+      { name: 'Medium', value: priorities.medium, color: '#059669' },
+      { name: 'High', value: priorities.high, color: '#d97706' },
+      { name: 'Urgent', value: priorities.urgent, color: '#dc2626' },
     ].filter(d => d.value > 0);
   }, [tasks]);
 
@@ -76,47 +76,47 @@ export function DashboardContent() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Total Tasks</p>
-            <h3 className="text-2xl font-bold text-slate-900">{stats.total}</h3>
+            <p className="text-sm font-semibold text-slate-600 mb-1">Total Tasks</p>
+            <h3 className="text-3xl font-bold text-slate-900">{stats.total}</h3>
           </div>
-          <div className="p-3 bg-brand-50 text-brand-600 rounded-lg">
-            <ListTodo className="w-5 h-5" />
+          <div className="p-3 bg-brand-50 text-brand-700 rounded-xl">
+            <ListTodo className="w-6 h-6" />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Completed</p>
-            <h3 className="text-2xl font-bold text-slate-900">{stats.completed}</h3>
-            <p className="text-xs font-medium text-emerald-600 mt-1">{stats.completionRate}% completion rate</p>
+            <p className="text-sm font-semibold text-slate-600 mb-1">Completed</p>
+            <h3 className="text-3xl font-bold text-slate-900">{stats.completed}</h3>
+            <p className="text-sm font-semibold text-emerald-700 mt-2">{stats.completionRate}% completion rate</p>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-            <CheckCircle2 className="w-5 h-5" />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
-          <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Overdue</p>
-            <h3 className="text-2xl font-bold text-slate-900">{stats.overdue}</h3>
-            {stats.overdue > 0 && <p className="text-xs font-medium text-red-600 mt-1">Requires attention</p>}
-          </div>
-          <div className="p-3 bg-red-50 text-red-600 rounded-lg">
-            <AlertCircle className="w-5 h-5" />
+          <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
+            <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
 
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500 mb-1">Avg. Time</p>
-            <h3 className="text-2xl font-bold text-slate-900">2.4d</h3>
-            <p className="text-xs font-medium text-emerald-600 mt-1">-0.5d from last week</p>
+            <p className="text-sm font-semibold text-slate-600 mb-1">Overdue</p>
+            <h3 className="text-3xl font-bold text-slate-900">{stats.overdue}</h3>
+            {stats.overdue > 0 && <p className="text-sm font-semibold text-red-700 mt-2">Requires attention</p>}
           </div>
-          <div className="p-3 bg-amber-50 text-amber-600 rounded-lg">
-            <Clock className="w-5 h-5" />
+          <div className="p-3 bg-red-50 text-red-700 rounded-xl">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between">
+          <div>
+            <p className="text-sm font-semibold text-slate-600 mb-1">Avg. Time</p>
+            <h3 className="text-3xl font-bold text-slate-900">2.4d</h3>
+            <p className="text-sm font-semibold text-amber-700 mt-2">-0.5d from last week</p>
+          </div>
+          <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
+            <Clock className="w-6 h-6" />
           </div>
         </div>
       </div>
@@ -129,8 +129,8 @@ export function DashboardContent() {
              <ResponsiveContainer width="100%" height="100%">
                <BarChart data={workloadData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} dy={10} />
-                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12 }} dy={10} />
+                 <YAxis axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 12 }} />
                  <Tooltip 
                    cursor={{ fill: '#f8fafc' }}
                    contentStyle={{ borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}

@@ -59,31 +59,31 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
         <div className="flex-1 overflow-y-auto p-6">
           <form id="create-task-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Title <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Title <span className="text-red-500">*</span></label>
               <input 
                 {...register('title')}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
+                className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow"
                 placeholder="E.g., Design new landing page"
               />
-              {errors.title && <p className="mt-1 text-sm text-red-500">{errors.title.message}</p>}
+              {errors.title && <p className="mt-1 text-sm text-red-500 font-medium">{errors.title.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Description</label>
               <textarea 
                 {...register('description')}
                 rows={4}
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow resize-none"
+                className="w-full px-4 py-3 text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-shadow resize-none"
                 placeholder="Add more details about this task..."
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Status</label>
                 <select 
                   {...register('status')}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                 >
                   <option value="todo">To Do</option>
                   <option value="in_progress">In Progress</option>
@@ -92,10 +92,10 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Priority</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Priority</label>
                 <select 
                   {...register('priority')}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                  className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -107,22 +107,22 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
 
             {/* Note: In a real app we'd have a proper assigning dropdown, simplified here */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Due Date</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Due Date</label>
               <input 
                 {...register('dueDate')}
                 type="date"
-                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
+                className="w-full px-4 py-2.5 min-h-[44px] text-base border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white"
               />
             </div>
 
           </form>
         </div>
 
-        <div className="p-6 border-t border-slate-200 bg-slate-50 flex gap-3 justify-end shrink-0">
+        <div className="p-4 sm:p-6 border-t border-slate-200 bg-slate-50 flex gap-4 justify-end shrink-0">
           <button 
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg font-medium transition-colors"
+            className="px-5 py-2.5 text-base text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-xl font-semibold transition-colors min-h-[48px] w-full sm:w-auto"
           >
             Cancel
           </button>
@@ -130,7 +130,7 @@ export function CreateTaskDrawer({ isOpen, onClose }: CreateTaskDrawerProps) {
             type="submit"
             form="create-task-form"
             disabled={isSubmitting}
-            className="px-4 py-2 text-white bg-brand-600 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 rounded-lg font-medium transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+            className="px-5 py-2.5 text-base text-white bg-brand-600 hover:bg-brand-700 focus:ring-4 focus:ring-brand-200 rounded-xl font-semibold transition-all disabled:opacity-50 flex items-center justify-center min-w-[120px] min-h-[48px] w-full sm:w-auto"
           >
             {isSubmitting ? 'Saving...' : 'Create Task'}
           </button>
